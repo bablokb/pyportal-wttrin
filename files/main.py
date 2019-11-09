@@ -52,8 +52,12 @@ COLOR   = 0xFFFFFF
 group.append(get_background("wolken.bmp"))
 
 connection = get_wifi(secrets)
-response = connection.get("https://wttr.in/München?AT0")
-group.append(get_label(response.text,FONT,COLOR))
+try:
+  response = connection.get("https://wttr.in/München?AT0")
+  text = response.text
+except:
+  text = "keine Daten erhalten"
+group.append(get_label(text,FONT,COLOR))
 
 # Show it
 display.show(group)
