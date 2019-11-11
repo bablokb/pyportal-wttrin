@@ -1,3 +1,15 @@
+# -------------------------------------------------------------------------
+# PyPortal code: display weather-information from https://wttr.in
+#
+# See the Readme.md for necessary libraries.
+#
+# Author: Bernhard Bablok
+# License: GPL3
+#
+# Website: https://github.com/bablokb/pygame-wttrin
+#
+# -------------------------------------------------------------------------
+
 import board
 import busio
 from digitalio import DigitalInOut
@@ -31,15 +43,16 @@ def get_background(filename):
                             pixel_shader=displayio.ColorConverter())
 
 # ---------------------------------------------------------------------
-def get_label(text,font,color):
+def set_text(group,text,font,color):
+  if len(group) == 2:
+    del group[1]
   text_area = label.Label(font, text=text, color=color)
   (x,y,w,h) = text_area.bounding_box
 
   # Set the location at top left
   text_area.x = 0
   text_area.y = -y
-
-  return text_area
+  group.append(text_area)
 
 # --- main-loop   -----------------------------------------------------
 
@@ -51,16 +64,27 @@ COLOR   = 0xFFFFFF
 # set background
 group.append(get_background("wolken.bmp"))
 
-connection = get_wifi(secrets)
-try:
-  response = connection.get("https://wttr.in/München?AT0")
-  text = response.text
-except:
-  text = "keine Daten erhalten"
-group.append(get_label(text,FONT,COLOR))
+textbox = set_text(group,"connecting to AP ...",FONT,COLOR)
 
 # Show it
 display.show(group)
 
+# connect to internet
+connection = get_wifi(secrets)
+
+weather_data = "no data available yet"
+
 while True:
-  time.sleep(60)
+  try:
+    set_text(group,"connecting to https://wttr.in",FONT,COLOR)
+    display.show(group)
+    response     = connection.get("https://wttr.in/München?AT0")
+    weather_data = response.text
+  except:
+    pass           # keep old data
+
+  set_text(group,weather_data,FONT,COLOR)
+  display.show(group)
+
+  # wait
+  time.sleep(120)
