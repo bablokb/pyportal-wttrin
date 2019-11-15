@@ -35,6 +35,16 @@ WDAY={0:'Mon',
       6:'Son'
   }
 
+# --- helper-class for timers   ---------------------------------------
+
+class Timer(object):
+  def __init__(dur):
+    self._dur = dur     # in seconds
+  def start():
+    self._start = time.time()
+  def expired(now):
+    return now - self._start >= self._dur
+
 # ---------------------------------------------------------------------
 def get_wifi(secrets):
   esp32_ready = DigitalInOut(board.ESP_BUSY)
