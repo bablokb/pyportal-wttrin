@@ -25,6 +25,7 @@ from secrets import secrets  # file secrets.py
 
 # --- constants   -----------------------------------------------------
 
+URL_WETTRIN = "https://wttr.in/München?AT0"
 WDAY={0:'Mon',
       1:'Die',
       2:'Mit',
@@ -123,7 +124,7 @@ while True:
   # update weather-info
   try:
     print("connecting to https://wttr.in")
-    response     = connection.get("https://wttr.in/München?AT0")
+    response     = connection.get(URL_WETTRIN)
     weather_data = response.text
   except:
     print("wttr.in error: code: %d, reason: %s" %
