@@ -38,7 +38,7 @@ WDAY={0:'Mo',
       6:'So'
   }
 
-FONT  = bitmap_font.load_font("/DroidSansMono-16.bdf")
+FONT  = bitmap_font.load_font("/DejaVuSansMono-Bold-18.bdf")
 COLOR = 0xFFFFFF
 
 # --- helper-class for timers   ---------------------------------------
@@ -80,7 +80,7 @@ def get_background(filename):
 def set_text(group,text,offset=0):
   if len(group) == 3:
     del group[2]
-  text_area = label.Label(FONT,text=text,color=COLOR)
+  text_area = label.Label(FONT,text=text,color=COLOR,line_spacing=1)
   (x,y,w,h) = text_area.bounding_box
 
   # Set the location at top left
@@ -107,7 +107,7 @@ def get_time():
 
 def update_header(header):
   now = get_time()
-  text = "%s     %04.1f °C" % (now,22.5)    # TODO: query temperature-sensor
+  text = "%s   %04.1f°C" % (now,22.5)    # TODO: query temperature-sensor
   if header is None:
     header = label.Label(FONT,text=text,color=COLOR)
     header.y = -header.bounding_box[1]
