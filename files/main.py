@@ -25,7 +25,7 @@ from secrets import secrets  # file secrets.py
 
 # --- constants   -----------------------------------------------------
 
-URL_WETTRIN = "https://wttr.in/München?AT0"
+URL_WETTRIN = "https://wttr.in/München?AT0&lang=de"
 WDAY={0:'Mon',
       1:'Die',
       2:'Mit',
