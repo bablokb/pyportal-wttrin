@@ -25,25 +25,36 @@ from secrets import secrets  # file secrets.py
 
 # --- constants   -----------------------------------------------------
 
-URL_WETTRIN = "https://wttr.in/München?AT0&lang=de"
-WDAY={0:'Mon',
-      1:'Die',
-      2:'Mit',
-      3:'Don',
-      4:'Fre',
-      5:'Sam',
-      6:'Son'
+WETTRIN_URL = "https://wttr.in/München?AT0&lang=de"
+WETTRIN_INT = 120
+CLOCK_INT   = 60
+
+WDAY={0:'Mo',
+      1:'Di',
+      2:'Mi',
+      3:'Do',
+      4:'Fr',
+      5:'Sa',
+      6:'So'
   }
+
+FONT  = bitmap_font.load_font("/DroidSansMono-16.bdf")
+COLOR = 0xFFFFFF
 
 # --- helper-class for timers   ---------------------------------------
 
 class Timer(object):
-  def __init__(dur):
+  def __init__(self,dur):
     self._dur = dur     # in seconds
-  def start():
-    self._start = time.time()
-  def expired(now):
-    return now - self._start >= self._dur
+  def start(self,expired=False):
+    if expired:
+      self._start = 0
+    else:
+      self._start = time.time()
+  def rest(self,now=None):
+    if now is None:
+      now = time.time()
+    return max(self._dur-(now-self._start),0)
 
 # ---------------------------------------------------------------------
 def get_wifi(secrets):
@@ -94,8 +105,9 @@ def get_time():
 
 # --- update header (datetime+temp)   ---------------------------------
 
-def update_header(header,now):
-  text = "%s      %d °C" % (now,22)    # TODO: query temperature-sensor
+def update_header(header):
+  now = get_time()
+  text = "%s     %04.1f °C" % (now,22.5)    # TODO: query temperature-sensor
   if header is None:
     header = label.Label(FONT,text=text,color=COLOR)
     header.y = -header.bounding_box[1]
@@ -107,8 +119,7 @@ def update_header(header,now):
 
 display = board.DISPLAY
 group   = displayio.Group()
-FONT    = bitmap_font.load_font("/DroidSansMono-16.bdf")
-COLOR   = 0xFFFFFF
+wdata   = "no data available yet"
 
 # set background
 print("\nloading background")
@@ -125,29 +136,46 @@ now = get_time()
 print("local time is: %s" % now)
 
 # add header
-header = update_header(None,now)
+header = update_header(None)
 group.append(header)
 
-weather_data = "no data available yet"
+# setup timers
+w_tmr = Timer(WETTRIN_INT)
+c_tmr = Timer(CLOCK_INT)
+w_tmr.start(True)
+c_tmr.start(True)
 
 while True:
-  # update weather-info
-  try:
-    print("connecting to https://wttr.in")
-    response     = connection.get(URL_WETTRIN)
-    weather_data = response.text
-  except:
-    print("wttr.in error: code: %d, reason: %s" %
-          (response.status_code,response.reason))
-  finally:
-    response.close()
+  update = False
+  # update time
+  rest = c_tmr.rest()
+  if not rest:
+    print("clock-timer expired")
+    update = True
+    update_header(header)
+    c_tmr.start()
 
-  set_text(group,weather_data,header.bounding_box[3]+header.height)
-  display.show(group)
+  # update weather-info
+  rest = w_tmr.rest()
+  if not rest:
+    print("weather-timer expired")
+    update = True
+    try:
+      print("connecting to https://wttr.in")
+      response = connection.get(WETTRIN_URL)
+      wdata    = response.text
+    except:
+      print("wttr.in error: code: %d, reason: %s" %
+            (response.status_code,response.reason))
+    finally:
+      response.close()
+    w_tmr.start()
+
+  # update display
+  if update:
+    set_text(group,wdata,header.bounding_box[3]+header.height)
+    display.show(group)
 
   # wait
-  time.sleep(120)
-
-  # update time
-  now = get_time()
-  update_header(header,now)
+  now = time.time()
+  time.sleep(min(c_tmr.rest(now),w_tmr.rest(now)))
