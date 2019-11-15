@@ -55,15 +55,15 @@ def get_background(filename):
                             pixel_shader=displayio.ColorConverter())
 
 # ---------------------------------------------------------------------
-def set_text(group,text,font,color):
-  if len(group) == 2:
-    del group[1]
-  text_area = label.Label(font, text=text, color=color)
+def set_text(group,text,offset=0):
+  if len(group) == 3:
+    del group[2]
+  text_area = label.Label(FONT,text=text,color=COLOR)
   (x,y,w,h) = text_area.bounding_box
 
   # Set the location at top left
   text_area.x = 0
-  text_area.y = -y
+  text_area.y = -y + offset
   group.append(text_area)
 
 # ---------------------------------------------------------------------
@@ -80,6 +80,17 @@ def get_time():
   return ("%s, %02d.%02d.%02d %02d:%02d" %
           (WDAY[now.tm_wday],now.tm_mday,now.tm_mon,now.tm_year,
            now.tm_hour,now.tm_min))
+
+# --- update header (datetime+temp)   ---------------------------------
+
+def update_header(header,now):
+  text = "%s      %d °C" % (now,22)    # TODO: query temperature-sensor
+  if header is None:
+    header = label.Label(FONT,text=text,color=COLOR)
+    header.y = -header.bounding_box[1]
+    return header
+  else:
+    header.text = text
 
 # --- main-loop   -----------------------------------------------------
 
@@ -99,11 +110,17 @@ connection = get_wifi(secrets)
 # set local time
 print("get local time from worldtimeapi.org")
 set_time(connection,secrets['timezone'])
-print("local time is: %s" % get_time())
+now = get_time()
+print("local time is: %s" % now)
+
+# add header
+header = update_header(None,now)
+group.append(header)
 
 weather_data = "no data available yet"
 
 while True:
+  # update weather-info
   try:
     print("connecting to https://wttr.in")
     response     = connection.get("https://wttr.in/München?AT0")
@@ -114,8 +131,12 @@ while True:
   finally:
     response.close()
 
-  set_text(group,weather_data,FONT,COLOR)
+  set_text(group,weather_data,header.bounding_box[3]+header.height)
   display.show(group)
 
   # wait
   time.sleep(120)
+
+  # update time
+  now = get_time()
+  update_header(header,now)
