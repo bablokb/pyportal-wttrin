@@ -17,6 +17,7 @@ import time
 import rtc
 import neopixel
 import displayio
+import adafruit_adt7410
 from adafruit_bitmap_font import bitmap_font
 from adafruit_display_text import label
 from adafruit_esp32spi import adafruit_esp32spi, adafruit_esp32spi_wifimanager
@@ -105,9 +106,8 @@ def get_time():
 
 # --- update header (datetime+temp)   ---------------------------------
 
-def update_header(header):
-  now = get_time()
-  text = "%s   %04.1f°C" % (now,22.5)    # TODO: query temperature-sensor
+def update_header(header,sensor):
+  text = "%s   %04.1f°C" % (get_time(),sensor.temperature)
   if header is None:
     header = label.Label(FONT,text=text,color=COLOR)
     header.y = -header.bounding_box[1]
@@ -116,6 +116,10 @@ def update_header(header):
     header.text = text
 
 # --- main-loop   -----------------------------------------------------
+
+i2c_bus = busio.I2C(board.SCL, board.SDA)
+adt     = adafruit_adt7410.ADT7410(i2c_bus, address=0x48)
+adt.high_resolution = True
 
 display = board.DISPLAY
 group   = displayio.Group()
@@ -136,7 +140,7 @@ now = get_time()
 print("local time is: %s" % now)
 
 # add header
-header = update_header(None)
+header = update_header(None,adt)
 group.append(header)
 
 # setup timers
@@ -152,7 +156,7 @@ while True:
   if not rest:
     print("clock-timer expired")
     update = True
-    update_header(header)
+    update_header(header,adt)
     c_tmr.start()
 
   # update weather-info
