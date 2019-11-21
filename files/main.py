@@ -93,11 +93,17 @@ def set_text(group,text,offset=0):
 
 # ---------------------------------------------------------------------
 def set_time(con,tz):
-  response = con.get("http://worldtimeapi.org/api/timezone/"+tz)
-  tinfo    = response.json()
-  print(tinfo['datetime'])
-  rtc.RTC().datetime = time.localtime(tinfo['unixtime']+tinfo['raw_offset'])
-  response.close()
+  while True:
+    try:
+      response = con.get("http://worldtimeapi.org/api/timezone/"+tz)
+      tinfo    = response.json()
+      print(tinfo['datetime'])
+      rtc.RTC().datetime = time.localtime(tinfo['unixtime']+tinfo['raw_offset'])
+      response.close()
+      return
+    except Exception as ex:
+      print("exception in set_time:")
+      print(ex)
 
 # ---------------------------------------------------------------------
 def get_time():
@@ -195,16 +201,15 @@ while True:
       print("connecting to https://wttr.in")
       response = connection.get(WTTRIN_URL)
       wdata    = response.text
-    except:
-      print("wttr.in error: code: %d, reason: %s" %
-            (response.status_code,response.reason))
-    finally:
       response.close()
+      set_text(group,wdata,header.bounding_box[3]+header.height)
+    except Exception as ex:
+      print("exception connecting to https://wttr.in")
+      print(ex)
     w_tmr.start()
 
   # update display
   if update:
-    set_text(group,wdata,header.bounding_box[3]+header.height)
     display.show(group)
 
   # wait
