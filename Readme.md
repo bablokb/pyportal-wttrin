@@ -44,7 +44,7 @@ Libraries and Fonts
 -------------------
 
 Some files are not provided for legal or technical reasons (CircuitPython
-libraries much match the version of your installed interpreter).
+libraries must match the version of your installed interpreter).
 
 The directory-tree contains (empty) files with the names
 `ADD_xxx`. Replace these files with the corresponding file or directory.
