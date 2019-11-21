@@ -18,6 +18,7 @@ import rtc
 import neopixel
 import displayio
 import adafruit_adt7410
+import adafruit_touchscreen
 from adafruit_bitmap_font import bitmap_font
 from adafruit_display_text import label
 from adafruit_esp32spi import adafruit_esp32spi, adafruit_esp32spi_wifimanager
@@ -26,9 +27,10 @@ from secrets import secrets  # file secrets.py
 
 # --- constants   -----------------------------------------------------
 
-WETTRIN_URL = "https://wttr.in/München?AT0&lang=de"
-WETTRIN_INT = 120
-CLOCK_INT   = 60
+WTTRIN_URL    = "https://wttr.in/München?AT0&lang=de"
+WTTRIN_INT    = 120
+CLOCK_INT     = 60
+BACKLIGHT_INT = 300
 
 WDAY={0:'Mo',
       1:'Di',
@@ -104,6 +106,15 @@ def get_time():
           (WDAY[now.tm_wday],now.tm_mday,now.tm_mon,now.tm_year,
            now.tm_hour,now.tm_min))
 
+# --- wait for touch-event   ------------------------------------------
+def wait_for_touch(ts):
+  while True:
+    if ts.touch_point:
+      print("screen touched")
+      return
+    else:
+      time.sleep(0.1)
+
 # --- update header (datetime+temp)   ---------------------------------
 
 def update_header(header,sensor):
@@ -143,14 +154,30 @@ print("local time is: %s" % now)
 header = update_header(None,adt)
 group.append(header)
 
+# setup touchscreen
+touchscreen = adafruit_touchscreen.Touchscreen(
+  board.TOUCH_XL, board.TOUCH_XR,board.TOUCH_YD, board.TOUCH_YU,
+  calibration=((5200, 59000),(5800, 57000)),
+  size=(board.DISPLAY.width, board.DISPLAY.height))
+
 # setup timers
-w_tmr = Timer(WETTRIN_INT)
+w_tmr = Timer(WTTRIN_INT)
 c_tmr = Timer(CLOCK_INT)
+b_tmr = Timer(BACKLIGHT_INT)
 w_tmr.start(True)
 c_tmr.start(True)
+b_tmr.start(False)
 
 while True:
   update = False
+  # turn off backlight when timer expires
+  if not b_tmr.rest():
+    board.DISPLAY.auto_brightness = False
+    board.DISPLAY.brightness      = 0.0
+    wait_for_touch(touchscreen)
+    board.DISPLAY.auto_brightness = True
+    b_tmr.start()
+
   # update time
   rest = c_tmr.rest()
   if not rest:
@@ -166,7 +193,7 @@ while True:
     update = True
     try:
       print("connecting to https://wttr.in")
-      response = connection.get(WETTRIN_URL)
+      response = connection.get(WTTRIN_URL)
       wdata    = response.text
     except:
       print("wttr.in error: code: %d, reason: %s" %
