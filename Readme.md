@@ -58,6 +58,7 @@ Specifically, the application needs the following libraries:
   - adafruit_esp32spi
   - adafruit_register
   - adafruit_requests
+  - adafruit_touchscreen
   - neopixel
 
 The application uses the *DejaVuSansMono-Bold-18* font. You have to create
