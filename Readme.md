@@ -66,6 +66,13 @@ the font yourself. Adafruit provides a simple guide https://learn.adafruit.com/c
 five minutes.
 
 
+Alternative implementation for a Raspberry Pi
+---------------------------------------------
+
+The directory `pygame-fbgui` contains an alternative implementation for
+a Pi with a small framebuffer-display.
+
+
 Where to go
 -----------
 
